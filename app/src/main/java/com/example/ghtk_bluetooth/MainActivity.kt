@@ -395,7 +395,6 @@ class MainActivity : AppCompatActivity() {
             Log.d("MainActivity", "Kết nối thành công với ${device.name}")
 
             // Sau khi kết nối thành công, bạn có thể truyền dữ liệu qua bluetoothSocket
-            // ...
 
         } catch (e: IOException) {
             Toast.makeText(this, "Ket noi that bai", Toast.LENGTH_SHORT).show()
