@@ -22,7 +22,6 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 
 import androidx.core.app.ActivityCompat
@@ -31,7 +30,7 @@ import com.example.ghtk_bluetooth.databinding.ActivityMainBinding
 import java.io.IOException
 import java.util.UUID
 
-class MainActivity : AppCompatActivity(){
+class MainActivity : AppCompatActivity() {
 
     private var _binding: ActivityMainBinding? = null
     private val binding get() = _binding!!
@@ -46,21 +45,18 @@ class MainActivity : AppCompatActivity(){
     private lateinit var bluetoothAdapter: BluetoothAdapter
 
     private lateinit var pairedDevices: Set<BluetoothDevice>
-    private val availableDevices = mutableListOf<BluetoothDevice>()
+    private val availableDevices = mutableSetOf<BluetoothDevice>()
 
     private lateinit var pairedDeviceAdapter: BluetoothDeviceAdapter
     private val pairedDevicesList = mutableListOf<BluetoothDeviceModel>() // Danh sách để hiển thị
 
     private lateinit var availableDeviceAdapter: BluetoothDeviceAdapter
-    private val availableDevicesList = mutableListOf<BluetoothDeviceModel>() // Danh sách để hiển thị
+    private val availableDevicesList =
+        mutableListOf<BluetoothDeviceModel>() // Danh sách để hiển thị
 
     // UUID này là một UUID phổ biến được sử dụng cho Bluetooth SPP (Serial Port Profile)
     private val myId: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
-
-//    private lateinit var acceptThread: AcceptThread
-//    private lateinit var connectThread: ConnectThread
-
-
+//    private val myId: UUID = UUID.fromString("0000112f-0000-1000-8000-00805f9b34fb")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,22 +73,16 @@ class MainActivity : AppCompatActivity(){
         availableDeviceAdapter = BluetoothDeviceAdapter(availableDevicesList) { connectDevice(it) }
         binding.recyclerViewAvailableDevice.adapter = availableDeviceAdapter
 
-//        acceptThread = AcceptThread()
-
-
-        // Dang ky cho nhung broadcasts khi mot thiet bi duoc tim thay
-
-
         if (bluetoothAdapter.isEnabled) {
             showPairedDevices()
             startDiscovery()
             enableDiscoverability()
-
-//            acceptThread.start()
+            startAcceptingConnections()
         }
 
         setStatus()
 
+        // Dang ky cho nhung broadcasts khi mot thiet bi duoc tim thay
         val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
         registerReceiver(receiver, filter)
 
@@ -102,12 +92,13 @@ class MainActivity : AppCompatActivity(){
     }
 
     private fun connectDevice(position: Int) {
-        Toast.makeText(this, "Connect device", Toast.LENGTH_SHORT).show()
-//        availableDevices.forEach{ device ->
-//            if (device.address == availableDevicesList[position].address) {
-//                connectToDevice(device)
-//            }
-//        }
+        Toast.makeText(this, availableDevices.size.toString(), Toast.LENGTH_SHORT).show()
+        availableDevices.forEach { device ->
+            if (device.address == availableDevicesList[position].address) {
+                connectToDevice(device)
+                return@forEach
+            }
+        }
     }
 
     @Deprecated("This method has been deprecated in favor of using the Activity Result API\n      which brings increased type safety via an {@link ActivityResultContract} and the prebuilt\n      contracts for common intents available in\n      {@link androidx.activity.result.contract.ActivityResultContracts}, provides hooks for\n      testing, and allow receiving results in separate, testable classes independent from your\n      activity. Use\n      {@link #registerForActivityResult(ActivityResultContract, ActivityResultCallback)}\n      with the appropriate {@link ActivityResultContract} and handling the result in the\n      {@link ActivityResultCallback#onActivityResult(Object) callback}.")
@@ -118,7 +109,7 @@ class MainActivity : AppCompatActivity(){
             showPairedDevices()
             startDiscovery()
             enableDiscoverability()
-//            acceptThread.start()
+            startAcceptingConnections()
         }
     }
 
@@ -252,8 +243,8 @@ class MainActivity : AppCompatActivity(){
 //                        }
 //                    }
                 } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                    val device: BluetoothDevice?
-                        = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                    val device: BluetoothDevice? =
+                        intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
                     if (ActivityCompat.checkSelfPermission(
                             this@MainActivity,
                             BLUETOOTH_SCAN
@@ -288,8 +279,8 @@ class MainActivity : AppCompatActivity(){
                     if (ActivityCompat.checkSelfPermission(
                             this@MainActivity, BLUETOOTH
                         ) == PackageManager.PERMISSION_GRANTED
-                    ) { 
-                        if (device !in availableDevices){
+                    ) {
+                        if (device !in availableDevices) {
                             val deviceName = device?.name
                             val deviceAddress = device?.address
                             if (deviceName != null && deviceAddress != null) {
@@ -304,7 +295,7 @@ class MainActivity : AppCompatActivity(){
                                 Log.d("Main Activity bluetooth", "new device")
                             }
                         }
-                        
+
                     }
                 }
             }
@@ -314,79 +305,79 @@ class MainActivity : AppCompatActivity(){
     // Ket noi nhu mot Server
 
 
-//    @SuppressLint("MissingPermission")
-//    private inner class AcceptThread : Thread() {
-//        private val mmServerSocket: BluetoothServerSocket? by lazy(LazyThreadSafetyMode.NONE) {
-//            bluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord("My Device", myId)
-//        }
-//        override fun run() {
-//            // Keep listening until exception occurs or a socket is returned.
-//            var shouldLoop = true
-//            while (shouldLoop) {
-//                val socket: BluetoothSocket? = try {
-//                    mmServerSocket?.accept()
-//                } catch (e: IOException) {
-//                    Log.e(TAG, "Socket's accept() method failed", e)
-//                    shouldLoop = false
-//                    null
-//                }
-//                socket?.also {
-////                    manageMyConnectedSocket(it)
-//                    mmServerSocket?.close()
-//                    shouldLoop = false
-//                }
-//            }
-//        }
-//
-//        // Closes the connect socket and causes the thread to finish.
-//        fun cancel() {
-//            try {
-//                mmServerSocket?.close()
-//            } catch (e: IOException) {
-//                Log.e(TAG, "Could not close the connect socket", e)
-//            }
-//        }
-//    }
+    private fun startAcceptingConnections() {
+        // Tạo một server socket sử dụng UUID
+        var serverSocket: BluetoothServerSocket? = null
 
-//    @SuppressLint("MissingPermission")
-//    private inner class ConnectThread(device: BluetoothDevice) : Thread() {
-//        private val mmSocket: BluetoothSocket? by lazy(LazyThreadSafetyMode.NONE) {
-//            device.createRfcommSocketToServiceRecord(myId)
-//        }
-//
-//        override fun run() {
-//
-//            bluetoothAdapter.cancelDiscovery()
-//            mmSocket?.connect()
-//        }
-//
-//        // Closes the client socket and causes the thread to finish.
-//        fun cancel() {
-//            try {
-//                mmSocket?.close()
-//            } catch (e: IOException) {
-//                Log.e(TAG, "Could not close the client socket", e)
-//            }
-//        }
-//    }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    BLUETOOTH_CONNECT
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                serverSocket =  bluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord("My Device", myId)
+            }
+        } else {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    BLUETOOTH
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                serverSocket =  bluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord("My Device", myId)
+            }
+        }
+
+        val shouldLoop = true
+        // Tạo một thread để chấp nhận kết nối
+        Thread {
+            while (shouldLoop) {
+                val socket: BluetoothSocket? = try {
+                    serverSocket?.accept() // Chờ đợi và chấp nhận kết nối
+                } catch (e: IOException) {
+                    Log.e(TAG, "Socket's accept() method failed", e)
+                    null
+                }
+
+                socket?.also {
+                    serverSocket?.close() // Đóng server socket sau khi chấp nhận một kết nối
+                    return@Thread // Thoát khỏi vòng lặp sau khi kết nối thành công
+                }
+            }
+        }.start() // Khởi chạy thread
+    }
+
 
     // Tạo phương thức để kết nối với một thiết bị Bluetooth
     private fun connectToDevice(device: BluetoothDevice) {
         var bluetoothSocket: BluetoothSocket? = null
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+            // createRfcommSocketToServiceRecord can quyen BLUETOOTH voi Api duoi 31
+            // va BLUETOOTH_CONNECT voi Api 31 tro len
+            // cancelDiscovery can quyen BLUETOOTH_ADMIN voi Api duoi 31
+            // va BLUETOOTH_SCAN voi Api 31 tro len
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (ActivityCompat.checkSelfPermission(
                         this,
                         BLUETOOTH_CONNECT
+                    ) == PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(
+                        this,
+                        BLUETOOTH_SCAN
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
                     // Tạo một BluetoothSocket sử dụng UUID cho SPP
                     bluetoothSocket = device.createRfcommSocketToServiceRecord(myId)
+
                 }
             } else {
                 if (ActivityCompat.checkSelfPermission(
                         this,
                         BLUETOOTH
+                    ) == PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(
+                        this,
+                        BLUETOOTH_ADMIN
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
                     // Tạo một BluetoothSocket sử dụng UUID cho SPP
@@ -396,20 +387,23 @@ class MainActivity : AppCompatActivity(){
 
             // Hủy việc discover các thiết bị khác vì nó có thể làm chậm quá trình kết nối
             bluetoothAdapter.cancelDiscovery()
-
             // Kết nối với thiết bị, đây là một hoạt động blocking
             bluetoothSocket?.connect()
+
+
+            Toast.makeText(this, "Ket noi thanh cong", Toast.LENGTH_SHORT).show()
             Log.d("MainActivity", "Kết nối thành công với ${device.name}")
 
             // Sau khi kết nối thành công, bạn có thể truyền dữ liệu qua bluetoothSocket
             // ...
 
         } catch (e: IOException) {
-            Log.e("MainActivity", "Lỗi kết nối với ${device.name}", e)
+            Toast.makeText(this, "Ket noi that bai", Toast.LENGTH_SHORT).show()
             try {
                 bluetoothSocket?.close()
+                startDiscovery()
             } catch (closeException: IOException) {
-                Log.e("MainActivity", "Không thể đóng socket", closeException)
+                Toast.makeText(this, "Khong the dong ket noi", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -442,16 +436,6 @@ class MainActivity : AppCompatActivity(){
         super.onDestroy()
         // Huy dang ky ACTION_FOUND receiver
         unregisterReceiver(receiver)
-
-        // Huy dang ky AcceptThread
-//        if (::acceptThread.isInitialized) {
-//            acceptThread.cancel()
-//        }
-        // Huy dang ky ConnectThread
-//        if (::connectThread.isInitialized) {
-//            connectThread.cancel()
-//        }
-
 
     }
 
