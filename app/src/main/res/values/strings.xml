@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">ghtk-bluetooth</string>
+    <string name="connect">Connect</string>
+    <string name="ok">ok</string>
+    <string name="access_required">De truy cap can phai cap quyen</string>
+    <string name="on">On</string>
+    <string name="paired_device">Các thiết bị đã kết nối</string>
+    <string name="available_device">Các thiết bị hiện có</string>
+</resources>
