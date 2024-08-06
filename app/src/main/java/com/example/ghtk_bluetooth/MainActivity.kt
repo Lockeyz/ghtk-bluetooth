@@ -10,10 +10,8 @@ import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
-import android.bluetooth.BluetoothServerSocket
 import android.bluetooth.BluetoothSocket
 import android.content.BroadcastReceiver
-import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -55,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         mutableListOf<BluetoothDeviceModel>() // Danh sách để hiển thị
 
     // UUID này là một UUID phổ biến được sử dụng cho Bluetooth SPP (Serial Port Profile)
-    private val myId: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+    private val myUuid: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
 //    private val myId: UUID = UUID.fromString("0000112f-0000-1000-8000-00805f9b34fb")
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,7 +75,7 @@ class MainActivity : AppCompatActivity() {
             showPairedDevices()
             startDiscovery()
             enableDiscoverability()
-            startAcceptingConnections()
+//            startAcceptingConnections()
         }
 
         setStatus()
@@ -109,7 +107,7 @@ class MainActivity : AppCompatActivity() {
             showPairedDevices()
             startDiscovery()
             enableDiscoverability()
-            startAcceptingConnections()
+//            startAcceptingConnections()
         }
     }
 
@@ -128,6 +126,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Bat tat bluetooth
     @SuppressLint("SetTextI18n", "NotifyDataSetChanged")
     private fun toggleBluetooth() {
         val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
@@ -305,50 +304,60 @@ class MainActivity : AppCompatActivity() {
     // Ket noi nhu mot Server
 
 
-    private fun startAcceptingConnections() {
-        // Tạo một server socket sử dụng UUID
-        var serverSocket: BluetoothServerSocket? = null
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    BLUETOOTH_CONNECT
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                serverSocket =  bluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord("My Device", myId)
-            }
-        } else {
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    BLUETOOTH
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                serverSocket =  bluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord("My Device", myId)
-            }
-        }
-
-        val shouldLoop = true
-        // Tạo một thread để chấp nhận kết nối
-        Thread {
-            while (shouldLoop) {
-                val socket: BluetoothSocket? = try {
-                    serverSocket?.accept() // Chờ đợi và chấp nhận kết nối
-                } catch (e: IOException) {
-                    Log.e(TAG, "Socket's accept() method failed", e)
-                    null
-                }
-
-                socket?.also {
-                    serverSocket?.close() // Đóng server socket sau khi chấp nhận một kết nối
-                    return@Thread // Thoát khỏi vòng lặp sau khi kết nối thành công
-                }
-            }
-        }.start() // Khởi chạy thread
-    }
+//    private fun startAcceptingConnections() {
+//        // Tạo một server socket sử dụng UUID
+//        var serverSocket: BluetoothServerSocket? = null
+//
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//            if (ActivityCompat.checkSelfPermission(
+//                    this,
+//                    BLUETOOTH_CONNECT
+//                ) == PackageManager.PERMISSION_GRANTED
+//            ) {
+//                serverSocket =  bluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord("My Device", myId)
+//            }
+//        } else {
+//            if (ActivityCompat.checkSelfPermission(
+//                    this,
+//                    BLUETOOTH
+//                ) == PackageManager.PERMISSION_GRANTED
+//            ) {
+//                serverSocket =  bluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord("My Device", myId)
+//            }
+//        }
+//
+//        val shouldLoop = true
+//        // Tạo một thread để chấp nhận kết nối
+//        Thread {
+//            while (shouldLoop) {
+//                val socket: BluetoothSocket? = try {
+//                    serverSocket?.accept() // Chờ đợi và chấp nhận kết nối
+//                } catch (e: IOException) {
+//                    Log.e(TAG, "Socket's accept() method failed", e)
+//                    null
+//                }
+//
+//                socket?.also {
+//                    serverSocket?.close() // Đóng server socket sau khi chấp nhận một kết nối
+//                    return@Thread // Thoát khỏi vòng lặp sau khi kết nối thành công
+//                }
+//            }
+//        }.start() // Khởi chạy thread
+//    }
 
 
     // Tạo phương thức để kết nối với một thiết bị Bluetooth
+    @SuppressLint("NotifyDataSetChanged")
     private fun connectToDevice(device: BluetoothDevice) {
+        val uuid = UUID.nameUUIDFromBytes(device.name.toByteArray())
+        // Kiểm tra nếu thiết bị có UUID
+//        if (uuids != null && uuids.isNotEmpty()) {
+//            val uuid: UUID = uuids[0].uuid  // Lấy UUID đầu tiên trong danh sách
+//            println("UUID của thiết bị: $uuid")
+//        } else {
+//            println("Không tìm thấy UUID nào trên thiết bị")
+//        }
+
         var bluetoothSocket: BluetoothSocket? = null
         try {
             // createRfcommSocketToServiceRecord can quyen BLUETOOTH voi Api duoi 31
@@ -367,7 +376,7 @@ class MainActivity : AppCompatActivity() {
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
                     // Tạo một BluetoothSocket sử dụng UUID cho SPP
-                    bluetoothSocket = device.createRfcommSocketToServiceRecord(myId)
+                    bluetoothSocket = device.createRfcommSocketToServiceRecord(myUuid)
 
                 }
             } else {
@@ -381,7 +390,7 @@ class MainActivity : AppCompatActivity() {
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
                     // Tạo một BluetoothSocket sử dụng UUID cho SPP
-                    bluetoothSocket = device.createRfcommSocketToServiceRecord(myId)
+                    bluetoothSocket = device.createRfcommSocketToServiceRecord(myUuid)
                 }
             }
 
@@ -390,10 +399,12 @@ class MainActivity : AppCompatActivity() {
             // Kết nối với thiết bị, đây là một hoạt động blocking
             bluetoothSocket?.connect()
 
+            pairedDevicesList.add(BluetoothDeviceModel(device.name, device.address))
+            availableDevicesList.remove(BluetoothDeviceModel(device.name, device.address))
+            pairedDeviceAdapter.notifyDataSetChanged()
+            availableDeviceAdapter.notifyDataSetChanged()
 
             Toast.makeText(this, "Ket noi thanh cong", Toast.LENGTH_SHORT).show()
-            Log.d("MainActivity", "Kết nối thành công với ${device.name}")
-
             // Sau khi kết nối thành công, bạn có thể truyền dữ liệu qua bluetoothSocket
 
         } catch (e: IOException) {
@@ -435,7 +446,6 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         // Huy dang ky ACTION_FOUND receiver
         unregisterReceiver(receiver)
-
     }
 
 }
